@@ -1,44 +1,48 @@
 import 'package:flutter/material.dart';
-import 'dart:math' as math;
 
 void main() {
-  runApp(PowerCalcApp());
+  runApp(MyApp());
 }
 
-class PowerCalcApp extends StatelessWidget {
+class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Power Calculations',
+      debugShowCheckedModeBanner: false,
+      title: 'Головний Екран',
       theme: ThemeData(primarySwatch: Colors.blue),
-      home: HomePage(),
+      home: MainScreen(),
     );
   }
 }
 
-class HomePage extends StatelessWidget {
+class MainScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Power Calculations')),
+      appBar: AppBar(title: Text('Головний Екран')),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             ElevatedButton(
-              child: Text('Short Circuit Calculation'),
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => ShortCircuitPage()),
-              ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => ReliabilityCalculator()),
+                );
+              },
+              child: Text('Перше завдання'),
             ),
             SizedBox(height: 20),
             ElevatedButton(
-              child: Text('Cable Section Calculation'),
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => CableSectionPage()),
-              ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => EnergyLossCalculator()),
+                );
+              },
+              child: Text('Друге завдання'),
             ),
           ],
         ),
@@ -47,59 +51,51 @@ class HomePage extends StatelessWidget {
   }
 }
 
-class ShortCircuitPage extends StatefulWidget {
+class ReliabilityCalculator extends StatefulWidget {
   @override
-  _ShortCircuitPageState createState() => _ShortCircuitPageState();
+  _ReliabilityCalculatorState createState() => _ReliabilityCalculatorState();
 }
 
-class _ShortCircuitPageState extends State<ShortCircuitPage> {
-  final TextEditingController unomController = TextEditingController();
-  final TextEditingController skController = TextEditingController();
-  final TextEditingController xcController = TextEditingController();
-  final TextEditingController xtController = TextEditingController();
-  final TextEditingController sbController = TextEditingController();
-  String result = '';
+class _ReliabilityCalculatorState extends State<ReliabilityCalculator> {
+  final TextEditingController pvController = TextEditingController();
+  final TextEditingController kpController = TextEditingController();
+  final TextEditingController tController = TextEditingController();
+
+  double? qo, tavg, ka, mEnergy;
 
   void calculate() {
-    double Unom = double.parse(unomController.text);
-    double Sk = double.parse(skController.text);
-    double Xc = double.parse(xcController.text);
-    double Xt = double.parse(xtController.text);
-    double Sb = double.parse(sbController.text);
-
-    double XSum = Xc + Xt;
-    double Ik0 = (Unom * 1000) / (1.732 * XSum);
-    double XcPU = Xc * (Sb / Sk);
-    double XtPU = Xt * (Sb / Sk);
-    double XSumPU = XcPU + XtPU;
-    double Ib = Sb / (1.732 * Unom);
-    double Ik0PU = Ik0 / Ib;
+    double pv = double.tryParse(pvController.text) ?? 0;
+    double kp = double.tryParse(kpController.text) ?? 0;
+    double t = double.tryParse(tController.text) ?? 0;
 
     setState(() {
-      result = 'Σ Impedance: ${XSum.toStringAsFixed(2)} Ω\n'
-          'Initial Short-Circuit Current: ${Ik0.toStringAsFixed(2)} kA\n'
-          'Σ Impedance in PU: ${XSumPU.toStringAsFixed(2)} PU\n'
-          'Short-Circuit Current in PU: ${Ik0PU.toStringAsFixed(2)} PU';
+      qo = 0.015; // Значення для прикладу
+      tavg = 100;
+      ka = (qo! * tavg!) / 8760;
+      mEnergy = kp * pv * t;
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Short Circuit Calculation')),
+      appBar: AppBar(title: Text('Перше завдання')),
       body: Padding(
-        padding: EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            TextField(controller: unomController, decoration: InputDecoration(labelText: 'Unom (kV)')),
-            TextField(controller: skController, decoration: InputDecoration(labelText: 'Sk (MVA)')),
-            TextField(controller: xcController, decoration: InputDecoration(labelText: 'Xc (Ohm)')),
-            TextField(controller: xtController, decoration: InputDecoration(labelText: 'Xt (Ohm)')),
-            TextField(controller: sbController, decoration: InputDecoration(labelText: 'Sb (MVA)')),
+            TextField(controller: pvController, decoration: InputDecoration(labelText: 'Навантаження (МВт)')),
+            TextField(controller: kpController, decoration: InputDecoration(labelText: 'Коефіцієнт використання')),
+            TextField(controller: tController, decoration: InputDecoration(labelText: 'Час роботи (год)')),
             SizedBox(height: 20),
-            ElevatedButton(onPressed: calculate, child: Text('Calculate')),
-            SizedBox(height: 20),
-            Text(result, textAlign: TextAlign.center),
+            ElevatedButton(onPressed: calculate, child: Text('Розрахувати')),
+            if (qo != null)
+              Column(
+                children: [
+                  Text('Частота відмов: ${qo!.toStringAsFixed(4)}'),
+                  Text('Втрати енергії: ${mEnergy!.toStringAsFixed(2)} МВт·год'),
+                ],
+              ),
           ],
         ),
       ),
@@ -107,58 +103,54 @@ class _ShortCircuitPageState extends State<ShortCircuitPage> {
   }
 }
 
-class CableSectionPage extends StatefulWidget {
+class EnergyLossCalculator extends StatefulWidget {
   @override
-  _CableSectionPageState createState() => _CableSectionPageState();
+  _EnergyLossCalculatorState createState() => _EnergyLossCalculatorState();
 }
 
-class _CableSectionPageState extends State<CableSectionPage> {
-  final TextEditingController SmController = TextEditingController();
-  final TextEditingController UnomController = TextEditingController();
-  final TextEditingController JekController = TextEditingController();
-  final TextEditingController KzController = TextEditingController();
-  final TextEditingController FtController = TextEditingController();
-  final TextEditingController CtController = TextEditingController();
-  String result = '';
+class _EnergyLossCalculatorState extends State<EnergyLossCalculator> {
+  final TextEditingController pwtController = TextEditingController();
+  final TextEditingController kpController = TextEditingController();
+  final TextEditingController tController = TextEditingController();
+  final TextEditingController wvtController = TextEditingController();
 
-  void calculate() {
-    double Sm = double.parse(SmController.text);
-    double Unom = double.parse(UnomController.text);
-    double Jek = double.parse(JekController.text);
-    double Kz = double.parse(KzController.text);
-    double Ft = double.parse(FtController.text);
-    double Ct = double.parse(CtController.text);
+  double? mav, mwvt, mtotal;
 
-    double Izm = Sm / (1.732 * Unom) * 1000;
-    double Sek = Izm / Jek;
-    double Smin = (Kz * 1000.0 * math.sqrt(Ft)) / Ct;
+  void calculateLosses() {
+    double pwt = double.tryParse(pwtController.text) ?? 0;
+    double kp = double.tryParse(kpController.text) ?? 0;
+    int t = int.tryParse(tController.text) ?? 0;
+    double wvt = double.tryParse(wvtController.text) ?? 0;
 
     setState(() {
-      result = 'Operational Current: ${Izm.toStringAsFixed(2)} A\n'
-          'Economic Cable Section: ${Sek.toStringAsFixed(2)} mm²\n'
-          'Minimum Section for Thermal Stability: ${Smin.toStringAsFixed(2)} mm²\n'
-          '${Sek >= Smin ? "Selected section is sufficient." : "Increase cable section!"}';
+      mav = kp * pwt * t;
+      mwvt = kp * t * 4e-3 * 5.12e2 * wvt;
+      mtotal = (23.6 * mav!) + (17.6 * mwvt!) - 2682000;
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Cable Section Calculation')),
+      appBar: AppBar(title: Text('Друге завдання')),
       body: Padding(
-        padding: EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            TextField(controller: SmController, decoration: InputDecoration(labelText: 'Sm (kVA)')),
-            TextField(controller: UnomController, decoration: InputDecoration(labelText: 'Unom (kV)')),
-            TextField(controller: JekController, decoration: InputDecoration(labelText: 'Jek (A/mm²)')),
-            TextField(controller: KzController, decoration: InputDecoration(labelText: 'Kz (kA)')),
-            TextField(controller: FtController, decoration: InputDecoration(labelText: 'Ft (sec)')),
-            TextField(controller: CtController, decoration: InputDecoration(labelText: 'Ct (A√s/mm²)')),
+            TextField(controller: pwtController, decoration: InputDecoration(labelText: 'Навантаження (МВт)')),
+            TextField(controller: kpController, decoration: InputDecoration(labelText: 'Коефіцієнт використання')),
+            TextField(controller: tController, decoration: InputDecoration(labelText: 'Час роботи (год)')),
+            TextField(controller: wvtController, decoration: InputDecoration(labelText: 'Параметр W (Вт)')),
             SizedBox(height: 20),
-            ElevatedButton(onPressed: calculate, child: Text('Calculate')),
-            SizedBox(height: 20),
-            Text(result, textAlign: TextAlign.center),
+            ElevatedButton(onPressed: calculateLosses, child: Text('Розрахувати')),
+            if (mav != null)
+              Column(
+                children: [
+                  Text('Втрати автотрансформатора: ${mav!.toStringAsFixed(2)} кВт·год'),
+                  Text('Втрати електропередачі: ${mwvt!.toStringAsFixed(2)} кВт·год'),
+                  Text('Загальні втрати: ${mtotal!.toStringAsFixed(2)} кВт·год'),
+                ],
+              ),
           ],
         ),
       ),
